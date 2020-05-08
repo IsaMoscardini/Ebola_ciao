@@ -1,51 +1,57 @@
 ---
 title: "EBOVAC - EDA"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
-```{r echo=FALSE, results='hide'}
+```{r echo=T, results='hide'}
 # SETTINGS
 rm(list = ls())
 options(stringsAsFactors = F)
 basedir <- '/media/marcon/storage/dataanalysis/isobel/ebola'
 
 # LIBRARIES
-pkgs <- c('tidyverse','burro','esquisse','Factoshiny')
-sapply(pkgs, require, character.only = T)
+pkgs <- c('tidyverse','ggplot2','SummarizedExperiment')
+suppressPackageStartupMessages(sapply(pkgs, require, character.only = T))
 ```
 
-Load data
-```{r echo=FALSE, results='hide'}
-# source(file.path(basedir,'src/helper/preprocessing_functions.R'))
-# ebovacObj <- preprocess_ebovacRnaseq()
-ebovacObj <- suppressMessages(
-  readRDS(file.path(basedir,'intermediate/preprocessed_data/ebovac/ebovacObj.rds'))
-)
-```
-
-EDA
+# Data
+## Preprocess Data (only once)
 ```{r}
+# source(file.path(basedir,'src/helper/preprocessing_functions.R'))
+# 
+# ebovacObj <- preprocess_ebovacRnaseq(
+#   counts_filename = 'Counts_ebovac.csv',
+#   sampleinfo_filename = 'Descriptive_ebovac.csv',
+#   datadir = '/media/marcon/storage/dataanalysis/data/isobel/ebola/',
+#   outdir = 'ebola/intermediate/preprocessed_data/ebovac',
+#   datasetObj_name = 'ebovacObj.rds'
+#   )
+```
+
+## Load Data
+```{r}
+ebovacObj <- readRDS(file.path(basedir,'intermediate/preprocessed_data/ebovac/ebovacObj.rds'))
+counts <- assay(ebovacObj)
 sampleinfo <- as.data.frame(colData(ebovacObj))
+sampleinfo$group_day <- NULL
+```
 
-#--- BURRO
-# explore_data(dataset = sampleinfo)
+# Plot adverse effects by volunteer and timepoints
+Load plot functions
+```{r}
+source(file.path(basedir,'src/helper/helper_plots.R'))
+```
 
-plot_outcomeByVar <- function(var_name = 'chills', 
-                              outcome_var = 'artrithis',
-                              data = sampleinfo) {
-  data = data.frame(outcome = data[,outcome_var],var = data[,var_name])
-  ggplot(data,aes(var, fill = outcome)) + geom_bar() + 
-    geom_text(stat = 'count', 
-              aes(label = paste0(round((..count../sum(..count..))*100,2))),
-              vjust = -1, size = 3) +
-    labs(x = var_name, y = outcome_var, 
-         subtitle = paste0('% of ',outcome_var,' factors by ',var_name),
-         fill = outcome_var) +
-    theme_minimal() + theme(legend.position = 'top') + 
-    scale_fill_manual(values = c('grey','darkred'))
+```{r}
+adv_effects = c('fever','artrithis','subj_fever','pain','viremia_d1','myalgia','chils','obj_fever')
+for(i in length(adv_effects)) {
+  plot_volAdvEffect(i, adv_effects)
 }
 ```
 
+# Plot artrithis by other categorical variables
 ## sanity-check
 ```{r}
 # treatment x artriths
@@ -81,32 +87,21 @@ plot_outcomeByVar(var_name = 'subj_fever')
 plot_outcomeByVar(var_name = 'viremia_d1')
 ```
 
-## TEST IF IT`S CORR:
+# Exploratory Data Analysis
+## with BURRO
 ```{r}
-# treatment x mapped_reads
-# age x subj_fever
-# artriths x fever
-# artriths x mapped_reads
-# artriths x viremia
-# viremia x chills
-# chills x group_day
-# chills x mapped_reads
-# chills x sampling_day
-# dose x mapped_reads
-# gender x fever
-# gender x mapped_reads
-# gender x viremia
-# myalgia x viremia
-# myalgia x fever
-# myalgia x age
-# myalgia x mapped_reads
-# viremia x obj_fever
-# obj_fever x fever
-# group_day x obj_fever
-# viremia x obj_fever
-# pain x viremia
-# pain x fever
-# pain x group_day
-# pain x mapped_reads
+# devtools::install_github("laderast/burro")
+# burro::explore_data(dataset = sampleinfo)
 ```
 
+## TO-DO:
+### EDA with ESQUISSE
+```{r}
+# install.packages('esquisse')
+# esquisse::esquisser()
+```
+
+### EDA with Factoshiny
+```{r}
+# Factoshiny::Factoshiny(res = )
+```
